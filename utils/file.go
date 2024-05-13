@@ -173,5 +173,5 @@ func ReadFileIntoArray(filename string) ([]string, error) {
 		result = append(result, string(lineBytes))
 
 	}
-	return nil, err
+	return result, err
 }
