@@ -3,11 +3,12 @@ package utils
 import (
 	"bufio"
 	"encoding/json"
+	"io"
 	"os"
 	"strings"
 )
 
-//覆盖写入
+// 覆盖写入
 func WriteFileContents(filename string, content string) error {
 
 	/* os.WriteFile takes in file path, a []byte of the file content,
@@ -26,7 +27,7 @@ func WriteSpecialFileContents(filename string, content string) error {
 	return err
 }
 
-//追加写如字符串
+// 追加写如字符串
 func WriteString(filename string, p string) (n int, err error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
@@ -41,7 +42,7 @@ func WriteString(filename string, p string) (n int, err error) {
 	return len(p), err
 }
 
-//替换文件字符串，不存在指定字符串，则追加
+// 替换文件字符串，不存在指定字符串，则追加
 func ReplaceStrInFile(filename string, str string, replace_str string) error {
 	bytes, err := os.ReadFile(filename)
 	if err != nil {
@@ -60,7 +61,7 @@ func ReplaceStrInFile(filename string, str string, replace_str string) error {
 	return nil
 }
 
-//追加写如字符数组
+// 追加写如字符数组
 func WriteBytes(filename string, p []byte) (n int, err error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
@@ -99,7 +100,7 @@ func ReadFileContents(filename string) map[string]string {
 	return data
 }
 
-//覆盖写入
+// 覆盖写入
 func WriteFileByte(filename string, p interface{}) error {
 	b, err := json.Marshal(&p)
 	if err != nil {
@@ -150,4 +151,27 @@ func PathExists(path string) bool {
 	}
 	//其它类型，不确定是否存在
 	return false
+}
+
+func ReadFileIntoArray(filename string) ([]string, error) {
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0)
+	if err != nil {
+		return nil, err
+	}
+	var result []string
+	r := bufio.NewReader(file)
+	defer file.Close()
+	for {
+		lineBytes, _, err := r.ReadLine()
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+		if err == io.EOF {
+			break
+		}
+
+		result = append(result, string(lineBytes))
+
+	}
+	return nil, err
 }
