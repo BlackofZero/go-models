@@ -9,10 +9,8 @@ import (
 )
 
 var (
-	LogFolder     = utils.GetEnvWithDefault("LOG_FOLDER", "logs")
-	LogFile       = utils.GetEnvWithDefault("LOG_File", "opreation")
-	Logger        BLoggers
-	RequestLogger BLoggers
+	LogFolder = utils.GetEnvWithDefault("LOG_FOLDER", "logs")
+	LogFile   = utils.GetEnvWithDefault("LOG_File", "opreation")
 )
 
 func init() {
@@ -20,8 +18,6 @@ func init() {
 	if os.IsNotExist(err) {
 		_ = os.MkdirAll(LogFolder, 0755)
 	}
-	Logger = BLoggers{fileName: LogFile}
-	RequestLogger = BLoggers{fileName: "request"}
 }
 
 func SetLoggerOutPut(logger *logrus.Logger, filename string) {
@@ -37,6 +33,7 @@ func SetLoggerOutPut(logger *logrus.Logger, filename string) {
 func NewJSONFormatterLogger(level logrus.Level, filename string, rotate bool) *logrus.Logger {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
+
 	logger.SetLevel(level)
 	if rotate {
 		go func() {
@@ -45,12 +42,12 @@ func NewJSONFormatterLogger(level logrus.Level, filename string, rotate bool) *l
 				time.Sleep(time.Minute)
 			}
 		}()
-		//go func() {
-		//	for {
-		//		os.Remove(fmt.Sprintf("%s/%s-%s.log", LogFolder, filename, utils.GetDaysAgoStr(7)))
-		//		time.Sleep(11 * time.Hour)
-		//	}
-		//}()
+		go func() {
+			for {
+				os.Remove(fmt.Sprintf("%s/%s-%s.log", LogFolder, filename, utils.GetDaysAgoStr(7)))
+				time.Sleep(11 * time.Hour)
+			}
+		}()
 	} else {
 		SetLoggerOutPut(logger, fmt.Sprintf("%s/%s.log", LogFolder, filename))
 	}
@@ -68,12 +65,12 @@ func NewTextFormatterLogger(level logrus.Level, filename string, rotate bool) *l
 				time.Sleep(time.Minute)
 			}
 		}()
-		//go func() {
-		//	for {
-		//		os.Remove(fmt.Sprintf("%s/%s-%s.log", LogFolder, filename, utils.GetDaysAgoStr(7)))
-		//		time.Sleep(11 * time.Hour)
-		//	}
-		//}()
+		go func() {
+			for {
+				os.Remove(fmt.Sprintf("%s/%s-%s.log", LogFolder, filename, utils.GetDaysAgoStr(7)))
+				time.Sleep(11 * time.Hour)
+			}
+		}()
 	} else {
 		SetLoggerOutPut(logger, fmt.Sprintf("%s/%s.log", LogFolder, filename))
 	}
@@ -81,30 +78,40 @@ func NewTextFormatterLogger(level logrus.Level, filename string, rotate bool) *l
 }
 
 type BLoggers struct {
-	fileName string
+	logInfo  *logrus.Logger
+	logError *logrus.Logger
+	logWarn  *logrus.Logger
 }
 
-func (lo BLoggers) Info(msg string) {
-	Log := NewJSONFormatterLogger(logrus.InfoLevel, lo.fileName, true)
-	Log.WithFields(logrus.Fields{
+func Init(fileName, logmode string) *BLoggers {
+	bloger := &BLoggers{}
+	if logmode == "json" {
+		bloger.logInfo = NewJSONFormatterLogger(logrus.InfoLevel, fileName, true)
+		bloger.logWarn = NewJSONFormatterLogger(logrus.WarnLevel, fileName, true)
+		bloger.logError = NewJSONFormatterLogger(logrus.ErrorLevel, fileName, true)
+	} else {
+		bloger.logInfo = NewTextFormatterLogger(logrus.InfoLevel, fileName, true)
+		bloger.logWarn = NewTextFormatterLogger(logrus.WarnLevel, fileName, true)
+		bloger.logError = NewTextFormatterLogger(logrus.ErrorLevel, fileName, true)
+	}
+	return bloger
+}
+
+func (lo *BLoggers) Info(msg string) {
+	lo.logInfo.WithFields(logrus.Fields{
 		"latency": time.Now(),
 	}).Info(msg)
 
 }
 
-func (lo BLoggers) Error(msg string) {
-	Log := NewJSONFormatterLogger(logrus.ErrorLevel, lo.fileName, true)
-	Log.WithFields(logrus.Fields{
+func (lo *BLoggers) Error(msg string) {
+	lo.logError.WithFields(logrus.Fields{
 		"latency": time.Now(),
 	}).Error(msg)
 }
 
-func (lo BLoggers) Warnning(msg string) {
-	Log := NewJSONFormatterLogger(logrus.InfoLevel, lo.fileName, true)
-	Log.WithFields(logrus.Fields{
+func (lo *BLoggers) Warnning(msg string) {
+	lo.logWarn.WithFields(logrus.Fields{
 		"latency": time.Now(),
 	}).Warn(msg)
-}
-func (lo BLoggers) Write(p []byte) (n int, err error) {
-	return utils.WriteBytes("logs/box_image", p)
 }
