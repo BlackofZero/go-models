@@ -1,6 +1,10 @@
 package mysql
 
-import "github.com/BlackofZero/go-models/db"
+import (
+	"fmt"
+	"github.com/BlackofZero/go-models/db"
+	"sync"
+)
 
 type mysqlExec struct {
 	hostIP   string
@@ -35,7 +39,49 @@ type Operation struct {
 	Condition  string `json:"condition"`
 }
 
+var rwLock sync.RWMutex
+var exportRows int
+
+func SetExportRows(rows int) {
+	rwLock.Lock()
+	exportRows = rows
+	rwLock.Unlock()
+}
+
+func GetExportRows() int {
+	rwLock.RLock()
+	rows := exportRows
+	rwLock.RUnlock()
+	return rows
+}
+
 func NewMysqlExec(mysql Mysql) db.ExecInstance {
 	return &mysqlExec{hostIP: mysql.Url, port: mysql.Port, username: mysql.Username, password: mysql.Password, db: mysql.Db,
 		table: table{tablename: mysql.Operation.Table, condition: mysql.Operation.Condition, limit: mysql.Operation.Limit, primarykey: mysql.Operation.PrimaryKey}}
+}
+
+func AssembleSql(operation Operation, min, max string) string {
+	if min == max {
+		return fmt.Sprintf(
+			"%s WHERE `%s` = '%s' AND %s ORDER BY `%s` LIMIT %d;",
+			operation.Sql,
+			operation.PrimaryKey,
+			max,
+			operation.Condition,
+			operation.PrimaryKey,
+			operation.Limit,
+		)
+	}
+
+	return fmt.Sprintf(
+		"%s WHERE `%s` >= '%s' AND `%s` < '%s' AND %s ORDER BY `%s` LIMIT %d;",
+		operation.Sql,
+		operation.PrimaryKey,
+		min,
+		operation.PrimaryKey,
+		max,
+		operation.Condition,
+		operation.PrimaryKey,
+		operation.Limit,
+	)
 }
