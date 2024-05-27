@@ -104,14 +104,30 @@ func (lo *BLoggers) Info(msg string) {
 
 }
 
+func (lo *BLoggers) Sinfo(msg string, a ...any) {
+	lo.logInfo.WithFields(logrus.Fields{
+		"latency": time.Now(),
+	}).Info(fmt.Sprintf(msg, a))
+
+}
 func (lo *BLoggers) Error(msg string) {
 	lo.logError.WithFields(logrus.Fields{
 		"latency": time.Now(),
 	}).Error(msg)
 }
+func (lo *BLoggers) Serror(msg string, a ...any) {
+	lo.logError.WithFields(logrus.Fields{
+		"latency": time.Now(),
+	}).Error(fmt.Sprintf(msg, a))
+}
 
-func (lo *BLoggers) Warnning(msg string) {
+func (lo *BLoggers) Warn(msg string) {
 	lo.logWarn.WithFields(logrus.Fields{
 		"latency": time.Now(),
 	}).Warn(msg)
+}
+func (lo *BLoggers) Swarn(msg string, a ...any) {
+	lo.logWarn.WithFields(logrus.Fields{
+		"latency": time.Now(),
+	}).Warn(fmt.Sprintf(msg, a))
 }
