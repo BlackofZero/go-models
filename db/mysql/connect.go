@@ -63,7 +63,7 @@ func (m mysqlExec) GetMinMax(min, max string) (string, string, bool, errors.Erro
 
 	whereCondition := m.table.condition
 	if "" != min {
-		whereCondition += fmt.Sprintf(" AND `%s` >= '%s'", m.table.primarykey, min)
+		whereCondition += fmt.Sprintf(" AND `%s` > '%s'", m.table.primarykey, min)
 	}
 	if "" != max {
 		whereCondition += fmt.Sprintf(" AND `%s` <= '%s'", m.table.primarykey, max)
@@ -89,9 +89,9 @@ func (m mysqlExec) GetMinMax(min, max string) (string, string, bool, errors.Erro
 		return "", "", overFalg, err
 	}
 	// no return use End as max
-	if len(results[0]) < m.table.limit-1 {
-		overFalg = true
-	}
+	//if len(results[0]) < m.table.limit-1 {
+	//	overFalg = true
+	//}
 
 	if len(results[0]) == 0 {
 		overFalg = true
