@@ -89,10 +89,10 @@ func (m mysqlExec) GetMinMax(min, max string) (string, string, bool, errors.Erro
 		return "", "", overFalg, err
 	}
 	// no return use End as max
-	//if len(results[0]) < m.table.limit {
-	//	overFalg = true
-	//}
-	//
+	if len(results[0]) < m.table.limit {
+		overFalg = true
+	}
+
 	if len(results[0]) == 0 {
 		overFalg = true
 		return "", "", overFalg, nil
