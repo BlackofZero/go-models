@@ -93,7 +93,7 @@ func (m mysqlExec) GetMinMax(min, max string) (string, string, bool, errors.Erro
 	//	overFalg = true
 	//}
 
-	if len(results) == 1 {
+	if results[0][0] == results[0][1] {
 		overFalg = true
 
 	}
