@@ -60,6 +60,10 @@ func NewMysqlExec(mysql Mysql) db.ExecInstance {
 		table: table{tablename: mysql.Operation.Table, condition: mysql.Operation.Condition, limit: mysql.Operation.Limit, primarykey: mysql.Operation.PrimaryKey}}
 }
 
+func NewExec(mysql Mysql) db.ExecInstance {
+	return &mysqlExec{hostIP: mysql.Url, port: mysql.Port, username: mysql.Username, password: mysql.Password, db: mysql.Db}
+}
+
 func AssembleSql(operation Operation, min, max string) string {
 	if min == max {
 		return fmt.Sprintf(
