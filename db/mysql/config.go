@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/BlackofZero/go-models/db"
 	"sync"
@@ -13,6 +14,7 @@ type mysqlExec struct {
 	password string
 	db       string
 	table    table
+	sqldb    *sql.DB
 }
 type table struct {
 	tablename  string
