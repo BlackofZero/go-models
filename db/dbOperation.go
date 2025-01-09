@@ -10,4 +10,6 @@ type ExecInstance interface {
 	ParseRows(rows *sql.Rows) ([]string, [][]string, errors.Error)
 	BatchExec(database string, statements []string) errors.Error
 	GetMinMax(min string, max string) (string, string, bool, errors.Error)
+	Connect(database string) errors.Error
+	Close() errors.Error
 }

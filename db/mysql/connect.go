@@ -44,14 +44,14 @@ func (m mysqlExec) connect(database string) errors.Error {
 }
 
 // 提供关闭连接的方法
-func (m *mysqlExec) Close() error {
+func (m *mysqlExec) Close() errors.Error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.sqldb != nil {
 		err := m.sqldb.Close()
 		m.sqldb = nil
-		return err
+		return errors.New(err.Error())
 	}
 	return nil
 }
