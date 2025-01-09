@@ -13,7 +13,7 @@ import (
 func (m mysqlExec) connect(database string) errors.Error {
 	m.mutex.Lock() // 加锁，确保线程安全
 	defer m.mutex.Unlock()
-	if m.sqldb != nil {
+	if Sqldb != nil {
 		return nil
 	}
 	dsn := fmt.Sprintf(
@@ -38,7 +38,7 @@ func (m mysqlExec) connect(database string) errors.Error {
 	sqldb.SetMaxIdleConns(5)
 	sqldb.SetMaxOpenConns(20)
 	sqldb.SetConnMaxLifetime(time.Minute * 1)
-	m.sqldb = sqldb
+	Sqldb = sqldb
 	return nil
 
 }
@@ -48,9 +48,9 @@ func (m *mysqlExec) Close() errors.Error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if m.sqldb != nil {
-		err := m.sqldb.Close()
-		m.sqldb = nil
+	if Sqldb != nil {
+		err := Sqldb.Close()
+		Sqldb = nil
 		return errors.New(err.Error())
 	}
 	return nil
@@ -60,10 +60,10 @@ func (m mysqlExec) Connect(database string) errors.Error {
 }
 
 func (m mysqlExec) QueryContext(ctx context.Context, database, statement string) (*sql.Rows, errors.Error) {
-	if m.sqldb == nil {
+	if Sqldb == nil {
 		m.Connect(database)
 	}
-	rows, err := m.sqldb.QueryContext(ctx, statement)
+	rows, err := Sqldb.QueryContext(ctx, statement)
 	if err != nil {
 		es := errors.New(fmt.Sprintf("执行SQL语句报错: [%s], %s", statement, err.Error()))
 		if err.Error() == context.Canceled.Error() {
@@ -153,11 +153,11 @@ func (m mysqlExec) ParseRows(rows *sql.Rows) ([]string, [][]string, errors.Error
 }
 
 func (m mysqlExec) batchExec(ctx context.Context, database string, statements []string) errors.Error {
-	if m.sqldb == nil {
+	if Sqldb == nil {
 		m.Connect(database)
 	}
 	for _, s := range statements {
-		_, err := m.sqldb.ExecContext(ctx, s)
+		_, err := Sqldb.ExecContext(ctx, s)
 		if err != nil {
 			es := errors.New(fmt.Sprintf("执行SQL语句报错: [%s], %s", statements, err.Error()))
 			if err.Error() == context.Canceled.Error() {

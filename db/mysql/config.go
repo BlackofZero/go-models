@@ -7,6 +7,8 @@ import (
 	"sync"
 )
 
+var Sqldb *sql.DB
+
 type mysqlExec struct {
 	hostIP   string
 	port     int
@@ -14,7 +16,6 @@ type mysqlExec struct {
 	password string
 	db       string
 	table    table
-	sqldb    *sql.DB
 	mutex    sync.Mutex
 }
 type table struct {
