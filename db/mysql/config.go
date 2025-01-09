@@ -15,6 +15,7 @@ type mysqlExec struct {
 	db       string
 	table    table
 	sqldb    *sql.DB
+	mutex    sync.Mutex
 }
 type table struct {
 	tablename  string
