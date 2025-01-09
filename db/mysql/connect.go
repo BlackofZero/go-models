@@ -25,7 +25,7 @@ func (m mysqlExec) connect(database string) (*gorm.DB, *sql.DB, errors.Error) {
 	if err != nil {
 		return nil, nil, errors.New(err.Error())
 	}
-	if m.sqldb != nil {
+	if m.sqldb == nil {
 		m.sqldb, err = db.DB()
 		if err != nil {
 			return nil, nil, errors.New(err.Error())
