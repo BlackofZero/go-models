@@ -21,21 +21,22 @@ func (m mysqlExec) connect(database string) (*gorm.DB, *sql.DB, errors.Error) {
 	//	return nil, nil, errors.New(err.Error())
 	//}
 	//db, err := gorm.Open(drivermysql.New(initMySQLConfig(dsn)), initGormConfig(logger.Info, logFile))
-	db, err := gorm.Open(drivermysql.New(initMySQLConfig(dsn)))
-	if err != nil {
-		return nil, nil, errors.New(err.Error())
-	}
+
 	if m.sqldb == nil {
+		db, err := gorm.Open(drivermysql.New(initMySQLConfig(dsn)))
+		if err != nil {
+			return nil, nil, errors.New(err.Error())
+		}
 		m.sqldb, err = db.DB()
 		if err != nil {
 			return nil, nil, errors.New(err.Error())
 		}
-		m.sqldb.SetMaxIdleConns(10)
-		m.sqldb.SetMaxOpenConns(10)
+		m.sqldb.SetMaxIdleConns(5)
+		m.sqldb.SetMaxOpenConns(20)
 		m.sqldb.SetConnMaxLifetime(time.Minute * 3)
 		return db, m.sqldb, nil
 	}
-	return db, m.sqldb, nil
+	return nil, m.sqldb, nil
 }
 
 func (m mysqlExec) Connect(database string) (*gorm.DB, *sql.DB, errors.Error) {
