@@ -10,11 +10,11 @@ import (
 	"time"
 )
 
-func (m mysqlExec) connect(database string) (*gorm.DB, *sql.DB, errors.Error) {
+func (m mysqlExec) connect(database string) errors.Error {
 	m.mutex.Lock() // 加锁，确保线程安全
 	defer m.mutex.Unlock()
 	if m.sqldb != nil {
-		return nil, m.sqldb, nil
+		return nil
 	}
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&timeout=10s&allowAllFiles=true",
@@ -29,22 +29,22 @@ func (m mysqlExec) connect(database string) (*gorm.DB, *sql.DB, errors.Error) {
 
 	db, err := gorm.Open(drivermysql.New(initMySQLConfig(dsn)))
 	if err != nil {
-		return nil, nil, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 	sqldb, err := db.DB()
 	if err != nil {
-		return nil, nil, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 	sqldb.SetMaxIdleConns(5)
 	sqldb.SetMaxOpenConns(20)
-	sqldb.SetConnMaxLifetime(time.Minute * 3)
+	sqldb.SetConnMaxLifetime(time.Minute * 1)
 	m.sqldb = sqldb
-	return db, sqldb, nil
+	return nil
 
 }
 
 // 提供关闭连接的方法
-func (m *mysqlExec) close() error {
+func (m *mysqlExec) Close() error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -55,28 +55,26 @@ func (m *mysqlExec) close() error {
 	}
 	return nil
 }
-func (m mysqlExec) Connect(database string) (*gorm.DB, *sql.DB, errors.Error) {
+func (m mysqlExec) Connect(database string) errors.Error {
 	return m.connect(database)
 }
 
 func (m mysqlExec) QueryContext(ctx context.Context, database, statement string) (*sql.Rows, errors.Error) {
-	_, db, err := m.Connect(database)
-	if err != nil {
-		return nil, err
-	} else {
-		defer m.close()
-		rows, err := db.QueryContext(ctx, statement)
-		if err != nil {
-			es := errors.New(fmt.Sprintf("执行SQL语句报错: [%s], %s", statement, err.Error()))
-			if err.Error() == context.Canceled.Error() {
-				es = errors.New("SQL执行终止")
-			} else if err.Error() == context.DeadlineExceeded.Error() {
-				es = errors.New("SQL执行超时")
-			}
-			return rows, es
-		}
-		return rows, nil
+	if m.sqldb == nil {
+		m.Connect(database)
 	}
+	rows, err := m.sqldb.QueryContext(ctx, statement)
+	if err != nil {
+		es := errors.New(fmt.Sprintf("执行SQL语句报错: [%s], %s", statement, err.Error()))
+		if err.Error() == context.Canceled.Error() {
+			es = errors.New("SQL执行终止")
+		} else if err.Error() == context.DeadlineExceeded.Error() {
+			es = errors.New("SQL执行超时")
+		}
+		return rows, es
+	}
+	return rows, nil
+
 }
 func (m mysqlExec) GetMinMax(min, max string) (string, string, bool, errors.Error) {
 	overFalg := false
@@ -155,25 +153,23 @@ func (m mysqlExec) ParseRows(rows *sql.Rows) ([]string, [][]string, errors.Error
 }
 
 func (m mysqlExec) batchExec(ctx context.Context, database string, statements []string) errors.Error {
-	_, db, err := m.Connect(database)
-	if err != nil {
-		return err
-	} else {
-		defer m.close()
-		for _, s := range statements {
-			_, err := db.ExecContext(ctx, s)
-			if err != nil {
-				es := errors.New(fmt.Sprintf("执行SQL语句报错: [%s], %s", statements, err.Error()))
-				if err.Error() == context.Canceled.Error() {
-					es = errors.New("SQL执行终止")
-				} else if err.Error() == context.DeadlineExceeded.Error() {
-					es = errors.New("SQL执行超时")
-				}
-				return es
-			}
-		}
-		return nil
+	if m.sqldb == nil {
+		m.Connect(database)
 	}
+	for _, s := range statements {
+		_, err := m.sqldb.ExecContext(ctx, s)
+		if err != nil {
+			es := errors.New(fmt.Sprintf("执行SQL语句报错: [%s], %s", statements, err.Error()))
+			if err.Error() == context.Canceled.Error() {
+				es = errors.New("SQL执行终止")
+			} else if err.Error() == context.DeadlineExceeded.Error() {
+				es = errors.New("SQL执行超时")
+			}
+			return es
+		}
+	}
+	return nil
+
 }
 
 func (m mysqlExec) BatchExec(database string, statements []string) errors.Error {
