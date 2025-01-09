@@ -59,8 +59,10 @@ func GetExportRows() int {
 }
 
 func NewMysqlExec(mysql Mysql) db.ExecInstance {
-	return &mysqlExec{hostIP: mysql.Url, port: mysql.Port, username: mysql.Username, password: mysql.Password, db: mysql.Db,
+	a := &mysqlExec{hostIP: mysql.Url, port: mysql.Port, username: mysql.Username, password: mysql.Password, db: mysql.Db,
 		table: table{tablename: mysql.Operation.Table, condition: mysql.Operation.Condition, limit: mysql.Operation.Limit, primarykey: mysql.Operation.PrimaryKey}}
+	a.connect(mysql.Db)
+	return a
 }
 
 func NewExec(mysql Mysql) db.ExecInstance {
